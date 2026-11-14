@@ -48,7 +48,7 @@ let filter = 'design'; let active = 0; let selectedIndex = -1; let position = 0;
 const $ = s => document.querySelector(s);
 const stage = $('#stage');
 
-function getData(work){ const data=saved[work.id] || {title:work.title, sub:work.sub, lead:work.lead, blocks:fallbackBlocks(work)}; if(data.blocks?.some(block=>block.type==='text' && block.value===work.lead)){ data.blocks=data.blocks.filter(block=>!(block.type==='text' && block.value===work.lead)); saved[work.id]=data; persist(); } return data; }
+function getData(work){ const stored=saved[work.id] && typeof saved[work.id]==='object' ? saved[work.id] : {}; const data={title:stored.title || work.title, sub:stored.sub || work.sub, lead:stored.lead || work.lead, blocks:Array.isArray(stored.blocks)?stored.blocks:fallbackBlocks(work)}; if(data.blocks?.some(block=>block.type==='text' && block.value===work.lead)){ data.blocks=data.blocks.filter(block=>!(block.type==='text' && block.value===work.lead)); } return data; }
 function persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); }catch{ try{ localStorage.removeItem(STORAGE_KEY); }catch{} } saveToDatabase(); }
 function filtered(){
   if(filter==='design') return works.filter(w=>w.category==='design');
