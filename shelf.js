@@ -1,7 +1,9 @@
 const ASSET = './assets/';
 const STORAGE_KEY = 'objects-portfolio-v1';
 const viewerMode = new URLSearchParams(location.search).get('view') === '1';
+const migrationMode = new URLSearchParams(location.search).get('migrate') === '1';
 if(viewerMode) document.documentElement.classList.add('viewer-mode');
+if(migrationMode) document.documentElement.classList.add('migration-mode');
 const works = [
   {id:'sofa', title:'FLOATING ISLET', sub:'SOFA SYSTEM / 沙发系统', category:'design', year:'2026', meta:'DESIGN WORKS · PRODUCT DESIGN', image:'floating-islet-sofa.jpg', lead:'一个关于漂浮、围合与自由组合的居住系统。模块化的软体单元围绕深色木质平台展开，让生活场景可以不断被重新组织。'},
   {id:'sideboard', title:'MOON ECLIPSE', sub:'SIDEBOARD / 月蚀边柜', category:'design', year:'2026', meta:'DESIGN WORKS · STORAGE SYSTEM', image:'moon-eclipse-sideboard.jpg', lead:'以月蚀为形态线索的收纳柜体。弧形门扇、隐藏抽屉与悬浮底座共同构成一件安静而有秩序的家居物件。'},
@@ -129,6 +131,7 @@ function addTextBlock(){ const d=getData(works.find(w=>w.id===openId)); d.blocks
 async function addImageFiles(files){ const d=getData(works.find(w=>w.id===openId)); for(const file of [...files]){ if(!file.type.startsWith('image/')) continue; const value=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)}); d.blocks.push({type:'image',value}); } saved[openId]=d; persist(); renderBlocks(d.blocks); }
 function setEdit(value){ if(viewerMode) value=false; editMode=value; $('#detailView').classList.toggle('editing',value); $('#editorTools').hidden=!value; $('#editState').textContent=value?'EDIT MODE / 编辑中':'VIEW MODE'; $('#editToggle').textContent=value?'DONE / 完成':'EDIT / 编辑'; const title=$('#detailTitle'),lead=$('#detailLead'); title.contentEditable=String(value); lead.contentEditable=String(value); title.oninput=lead.oninput=()=>{ if(viewerMode)return; const d=getData(works.find(w=>w.id===openId)); d.title=title.textContent; d.lead=lead.textContent; saved[openId]=d; persist(); }; renderBlocks(getData(works.find(w=>w.id===openId)).blocks); }
 function bind(){
+  if(migrationMode){ $('#migrationExport').hidden=false; $('#migrationExport').onclick=()=>{ const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='objects-portfolio-content.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }; }
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{filter=t.dataset.filter;resetShelf();renderStage();setCaption(getActiveWork());});
   $('#prevItem').onclick=()=>move(-1); $('#nextItem').onclick=()=>move(1); $('#openActive').onclick=()=>openDetail(getActiveWork().id); $('#closeDetail').onclick=closeDetail; $('#detailPrev').onclick=()=>moveDetail(-1); $('#detailNext').onclick=()=>moveDetail(1); $('#editToggle').onclick=()=>setEdit(!editMode);
   $('#addText').onclick=addTextBlock; $('#boardAddText').onclick=e=>{e.stopPropagation();addTextBlock();}; $('#boardAddImage').onclick=e=>{e.stopPropagation();$('#addImage').click();};
