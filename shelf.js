@@ -1,9 +1,8 @@
 const ASSET = './assets/';
 const STORAGE_KEY = 'objects-portfolio-v1';
-const viewerMode = new URLSearchParams(location.search).get('view') === '1';
-const migrationMode = new URLSearchParams(location.search).get('migrate') === '1';
-if(viewerMode) document.documentElement.classList.add('viewer-mode');
-if(migrationMode) document.documentElement.classList.add('migration-mode');
+const viewerMode = true;
+const staticContent = window.PORTFOLIO_CONTENT || {};
+document.documentElement.classList.add('viewer-mode');
 const works = [
   {id:'sofa', title:'FLOATING ISLET', sub:'SOFA SYSTEM / 沙发系统', category:'design', year:'2026', meta:'DESIGN WORKS · PRODUCT DESIGN', image:'floating-islet-sofa.jpg', lead:'一个关于漂浮、围合与自由组合的居住系统。模块化的软体单元围绕深色木质平台展开，让生活场景可以不断被重新组织。'},
   {id:'sideboard', title:'MOON ECLIPSE', sub:'SIDEBOARD / 月蚀边柜', category:'design', year:'2026', meta:'DESIGN WORKS · STORAGE SYSTEM', image:'moon-eclipse-sideboard.jpg', lead:'以月蚀为形态线索的收纳柜体。弧形门扇、隐藏抽屉与悬浮底座共同构成一件安静而有秩序的家居物件。'},
@@ -51,7 +50,7 @@ let filter = 'design'; let active = 0; let selectedIndex = -1; let position = 0;
 const $ = s => document.querySelector(s);
 const stage = $('#stage');
 
-function getData(work){ const stored=saved[work.id] && typeof saved[work.id]==='object' ? saved[work.id] : {}; const data={title:stored.title || work.title, sub:stored.sub || work.sub, lead:stored.lead || work.lead, blocks:Array.isArray(stored.blocks)?stored.blocks:fallbackBlocks(work)}; if(data.blocks?.some(block=>block.type==='text' && block.value===work.lead)){ data.blocks=data.blocks.filter(block=>!(block.type==='text' && block.value===work.lead)); } return data; }
+function getData(work){ const stored=staticContent[work.id] || {}; return {title:stored.title || work.title, sub:stored.sub || work.sub, lead:stored.lead || work.lead, blocks:Array.isArray(stored.blocks)?stored.blocks:fallbackBlocks(work)}; }
 function persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); }catch{ try{ localStorage.removeItem(STORAGE_KEY); }catch{} } saveToDatabase(); }
 function filtered(){
   if(filter==='design') return works.filter(w=>w.category==='design');
@@ -127,22 +126,13 @@ function openDetail(id=getActiveWork().id){ openId=id; editMode=false; const scr
 function moveDetail(delta){ const list=filtered(); const current=Math.max(0,list.findIndex(work=>work.id===openId)); const next=mod(current+delta,list.length); openId=list[next].id; const scroll=$('#detailView .detail-scroll'); if(scroll)scroll.scrollTop=0; renderDetail(); requestAnimationFrame(()=>{if(scroll)scroll.scrollTop=0;}); }
 function closeDetail(){ $('#detailView').classList.remove('open'); $('#detailView').classList.add('closing'); $('#detailView').setAttribute('aria-hidden','true'); document.body.style.overflow=''; setTimeout(()=>$('#detailView').classList.remove('closing'),800); }
 function renderDetail(){ const work=works.find(w=>w.id===openId)||works[0]; const d=getData(work); const list=filtered(); const index=Math.max(0,list.indexOf(work)); $('#detailKicker').textContent=`${work.category==='photography'?'PHOTOGRAPHY':work.category==='design'?'DESIGN WORKS':work.category.toUpperCase()} / ${work.year}`; $('#detailTitle').textContent=d.title; $('#detailMeta').textContent=work.meta; $('#detailLead').textContent=d.lead; $('#detailCover').src=ASSET+work.image; $('#detailCover').alt=d.title; $('#detailIndex').textContent=String(index+1).padStart(2,'0'); $('.board-section').hidden=work.category==='photography'; renderBlocks(d.blocks||fallbackBlocks(work)); setEdit(false); }
-function renderBlocks(blocks){ const wrap=$('#contentBlocks'); const empty=$('.board-empty'); const board=$('#boardCanvas'); wrap.innerHTML=''; empty.hidden=blocks.length>0; board.classList.toggle('has-content',blocks.length>0); wrap.classList.toggle('single-block',blocks.length===1); blocks.forEach((block,index)=>{ const el=document.createElement('article'); el.className=`content-block ${block.type==='image'?'content-image':'content-text'}`; const del=document.createElement('button'); del.className='block-delete'; del.type='button'; del.textContent='DELETE'; del.onclick=()=>{ const d=getData(works.find(w=>w.id===openId)); d.blocks.splice(index,1); saved[openId]=d; persist(); renderBlocks(d.blocks); }; if(block.type==='image'){ const img=document.createElement('img'); img.src=block.value; img.alt='项目图片'; el.append(img); } else { const p=document.createElement('p'); p.textContent=block.value; if(editMode){ const ta=document.createElement('textarea'); ta.value=block.value; ta.addEventListener('input',e=>{const d=getData(works.find(w=>w.id===openId));d.blocks[index].value=e.target.value;saved[openId]=d;persist();}); el.append(ta); } else el.append(p); } el.append(del); wrap.append(el); }); }
+function renderBlocks(blocks){ const wrap=$('#contentBlocks'); const empty=$('.board-empty'); const board=$('#boardCanvas'); wrap.innerHTML=''; empty.hidden=blocks.length>0; board.classList.toggle('has-content',blocks.length>0); wrap.classList.toggle('single-block',blocks.length===1); blocks.forEach(block=>{ const el=document.createElement('article'); el.className=`content-block ${block.type==='image'?'content-image':'content-text'}`; if(block.type==='image'){ const img=document.createElement('img'); img.src=block.value.startsWith('data:')?block.value:ASSET+block.value; img.alt='项目展板图片'; el.append(img); } else { const p=document.createElement('p'); p.textContent=block.value; el.append(p); } wrap.append(el); }); }
 function addTextBlock(){ const d=getData(works.find(w=>w.id===openId)); d.blocks.push({type:'text',value:'在这里输入新的项目文字……'}); saved[openId]=d; persist(); renderBlocks(d.blocks); }
 async function addImageFiles(files){ const d=getData(works.find(w=>w.id===openId)); for(const file of [...files]){ if(!file.type.startsWith('image/')) continue; const value=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)}); d.blocks.push({type:'image',value}); } saved[openId]=d; persist(); renderBlocks(d.blocks); }
-function setEdit(value){ if(viewerMode) value=false; editMode=value; $('#detailView').classList.toggle('editing',value); $('#editorTools').hidden=!value; $('#editState').textContent=value?'EDIT MODE / 编辑中':'VIEW MODE'; $('#editToggle').textContent=value?'DONE / 完成':'EDIT / 编辑'; const title=$('#detailTitle'),lead=$('#detailLead'); title.contentEditable=String(value); lead.contentEditable=String(value); title.oninput=lead.oninput=()=>{ if(viewerMode)return; const d=getData(works.find(w=>w.id===openId)); d.title=title.textContent; d.lead=lead.textContent; saved[openId]=d; persist(); }; renderBlocks(getData(works.find(w=>w.id===openId)).blocks); }
+function setEdit(){ editMode=false; renderBlocks(getData(works.find(w=>w.id===openId)).blocks); }
 function bind(){
-  if($('#migrationExport')){ $('#migrationExport').hidden=false; $('#migrationExport').onclick=exportSavedContent; }
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{filter=t.dataset.filter;resetShelf();renderStage();setCaption(getActiveWork());});
-  $('#prevItem').onclick=()=>move(-1); $('#nextItem').onclick=()=>move(1); $('#openActive').onclick=()=>openDetail(getActiveWork().id); $('#closeDetail').onclick=closeDetail; $('#detailPrev').onclick=()=>moveDetail(-1); $('#detailNext').onclick=()=>moveDetail(1); $('#editToggle').onclick=()=>setEdit(!editMode);
-  $('#addText').onclick=addTextBlock; $('#boardAddText').onclick=e=>{e.stopPropagation();addTextBlock();}; $('#boardAddImage').onclick=e=>{e.stopPropagation();$('#addImage').click();};
-  $('#addImage').onchange=async e=>{ await addImageFiles(e.target.files); e.target.value=''; };
-  $('#boardCanvas').addEventListener('click',e=>{if(!editMode || e.target.closest('button,.content-block'))return;if(e.target.closest('.board-empty') || e.target===e.currentTarget)addTextBlock();});
-  $('#boardCanvas').addEventListener('dragover',e=>{if(editMode){e.preventDefault();e.currentTarget.classList.add('drop-ready');}});
-  $('#boardCanvas').addEventListener('dragleave',e=>e.currentTarget.classList.remove('drop-ready'));
-  $('#boardCanvas').addEventListener('drop',async e=>{if(!editMode)return;e.preventDefault();e.currentTarget.classList.remove('drop-ready');await addImageFiles(e.dataTransfer.files);});
-  $('#clearContent').onclick=()=>{ if(confirm('清空当前作品的展板内容？')){const d=getData(works.find(w=>w.id===openId));d.blocks=[];saved[openId]=d;persist();renderBlocks([]);} };
-  $('#exportData').onclick=exportSavedContent;
+  $('#prevItem').onclick=()=>move(-1); $('#nextItem').onclick=()=>move(1); $('#openActive').onclick=()=>openDetail(getActiveWork().id); $('#closeDetail').onclick=closeDetail; $('#detailPrev').onclick=()=>moveDetail(-1); $('#detailNext').onclick=()=>moveDetail(1);
   document.addEventListener('keydown',e=>{if($('#detailView').classList.contains('open')){if(e.key==='Escape')closeDetail();return;} if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1);if(e.key==='Enter')openDetail();});
   stage.addEventListener('pointerdown',e=>{if(!e.target.closest('.tape'))return;drag={x:e.clientX,moved:false,start:target};});
   window.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>5)drag.moved=true;const h=Math.min(innerHeight*.48,innerWidth*.32);target=clamp(drag.start-dx/Math.max(50,h*.215),0,Math.max(0,filtered().length-1));});

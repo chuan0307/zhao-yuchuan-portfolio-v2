@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="./portfolio.css" />
 </head>
 <body id="top">
-  <button class="migration-export" id="migrationExport" type="button">EXPORT LOCAL CONTENT / 导出本机内容</button>
   <div class="paper-grain" aria-hidden="true"></div>
 
   <header class="site-nav">
@@ -164,7 +163,6 @@
     <button class="detail-nav detail-nav-next" id="detailNext" type="button" aria-label="下一个作品">→</button>
     <header class="detail-header">
       <div class="brand compact"><span class="brand-cn">赵予川</span><span class="brand-en">YUCHUAN ZHAO / DETAIL</span></div>
-      <div class="detail-actions"><button class="outline-btn edit-toggle" id="editToggle" type="button">EDIT / 编辑</button><button class="outline-btn" id="exportData" type="button">EXPORT / 导出</button></div>
     </header>
     <div class="detail-scroll">
       <div class="detail-grid">
@@ -173,11 +171,11 @@
       </div>
       <div class="board-section" hidden>
         <div class="section-label"><span>PROJECT BOARD / 项目展板</span><span id="editState">VIEW MODE</span></div>
-        <div class="board-canvas" id="boardCanvas"><div class="board-empty"><span class="empty-mark">+</span><span>展板暂留空白</span><small>点击此处添加文字，或将图片拖入展板</small><div class="board-empty-actions"><button class="tool-btn" id="boardAddText" type="button">＋ ADD TEXT / 添加文字</button><button class="tool-btn" id="boardAddImage" type="button">＋ ADD IMAGE / 添加图片</button></div></div><div class="content-blocks" id="contentBlocks"></div></div>
-        <div class="editor-tools" id="editorTools" hidden><button class="tool-btn" id="addText" type="button">＋ ADD TEXT / 添加文字</button><label class="tool-btn">＋ ADD IMAGE / 添加图片<input id="addImage" type="file" accept="image/*" multiple hidden /></label><button class="tool-btn muted" id="clearContent" type="button">CLEAR BOARD / 清空展板</button></div>
+        <div class="board-canvas" id="boardCanvas"><div class="board-empty"><span class="empty-mark">+</span><span>项目展板暂未添加</span></div><div class="content-blocks" id="contentBlocks"></div></div>
       </div>
     </div>
   </section>
+  <script src="./project-content.js"></script>
   <script src="./shelf.js"></script>
   <script src="./portfolio.js"></script>
 </body>
