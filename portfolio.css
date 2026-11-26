@@ -129,6 +129,7 @@ html,body { background:var(--bg); color:var(--ink); }
 .contact-button:hover { background:#fff; }
 .site-footer { background:#0b1425; color:#eaf2fb; }
 .site-footer p,.site-footer small,.footer-top { color:#a9b8cd; }
+.filing-link { color:#a9b8cd; font-size:10px; }.filing-link:hover { color:#c1dcff; text-decoration:underline; }
 .footer-name { color:#b6d5ff; }
 .detail,.shelf-home .detail { background:#101e34; color:#edf3fa; }
 .detail-header,.shelf-home .detail-header { background:rgba(10,23,42,.95); border-bottom:1px solid rgba(188,211,240,.16); }
